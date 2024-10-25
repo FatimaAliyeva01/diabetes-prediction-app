@@ -9,17 +9,28 @@ def load_model():
         model = pickle.load(model_file)
     return model
 
-# Funksiya: Skaler yükləmək (əgər modeli öyrədərkən skaler istifadə olunubsa)
+# Funksiya: Skaler yükləmək
 def load_scaler():
     with open('scaler.pkl', 'rb') as scaler_file:
         scaler = pickle.load(scaler_file)
     return scaler
 
-# Funksiya: İstifadəçi məlumatlarını emal etmək
+# Funksiya: İstifadəçi məlumatlarını modelin gözlədiyi formata gətirmək
 def preprocess_user_input(user_data):
-    # İstifadəçi məlumatlarını numpy array-ə çevir
-    input_data = np.array(list(user_data.values())).reshape(1, -1)
-    return input_data
+    # İstifadəçi məlumatlarını numpy massivinə çeviririk
+    data = np.array([
+        user_data['age'],
+        user_data['bmi'],
+        user_data['hba1c_level'],
+        user_data['blood_glucose_level'],
+        user_data['hypertension'],
+        user_data['heart_disease'],
+        user_data['gender_male'],
+        user_data['smoking_current'],
+        user_data['smoking_past']
+    ]).reshape(1, -1)
+    
+    return data
 
 # Funksiya: Dil seçimi
 def translate_text(language, texts):
@@ -86,7 +97,7 @@ def main():
     model = load_model()
     scaler = load_scaler()
 
-    # Streamlit Tətbiq Başlığı
+    # Başlıq
     st.title(translate_text(language, 'title'))
 
     # İstifadəçi Giriş Sahələri
@@ -94,22 +105,19 @@ def main():
     
     age = st.sidebar.number_input(translate_text(language, 'age'), 0, 200, 40)
     bmi = st.sidebar.number_input(translate_text(language, 'bmi'), 0.0, 50.0, 28.0)
-    
-    # HbA1c və Qan Qlükoza səviyyələri slider ilə təqdim olunur
     hba1c = st.sidebar.slider(translate_text(language, 'hba1c'), 0.0, 12.0, 5.5, step=0.1, format="%.1f")
     blood_glucose = st.sidebar.slider(translate_text(language, 'blood_glucose'), 0, 400, 100, step=1)
     
     hypertension = st.sidebar.selectbox(translate_text(language, 'hypertension'), 
-                                        ["No", "Yes"] if language == 'en' else ["Yox", "Bəli"])
+                                        ["Xeyr", "Bəli"] if language == 'az' else ["No", "Yes"])
     heart_disease = st.sidebar.selectbox(translate_text(language, 'heart_disease'), 
-                                         ["No", "Yes"] if language == 'en' else ["Yox", "Bəli"])
+                                         ["Xeyr", "Bəli"] if language == 'az' else ["No", "Yes"])
     gender = st.sidebar.selectbox(translate_text(language, 'gender'), 
-                                  ['Male', 'Female'] if language == 'en' else ['Kişi', 'Qadın'])
+                                  ['Kişi', 'Qadın'] if language == 'az' else ['Male', 'Female'])
     
-    # Siqaret çəkmə tarixçəsi seçimi
     smoking_history = st.sidebar.selectbox(translate_text(language, 'smoking'), 
-                                           ['I do not smoke', 'I currently smoke', 'I used to smoke'] if language == 'en' 
-                                           else ['Siqaret çəkmirəm', 'Siqaret çəkirəm', 'Əvvəl çəkmişəm'])
+                                           ['Siqaret çəkmirəm', 'Siqaret çəkirəm', 'Əvvəl çəkmişəm'] if language == 'az' 
+                                           else ['I do not smoke', 'I currently smoke', 'I used to smoke'])
 
     # İstifadəçi məlumatlarını dictionary kimi formalaşdır
     user_data = {
@@ -117,71 +125,41 @@ def main():
         'bmi': bmi,
         'hba1c_level': hba1c,
         'blood_glucose_level': blood_glucose,
-        'hypertension': 1 if hypertension == ("Yes" if language == 'en' else "Bəli") else 0,
-        'heart_disease': 1 if heart_disease == ("Yes" if language == 'en' else "Bəli") else 0,
-        'gender_male': 1 if gender == ('Male' if language == 'en' else 'Kişi') else 0,
-        'smoking_current': 1 if smoking_history == ('I currently smoke' if language == 'en' else 'Siqaret çəkirəm') else 0,
-        'smoking_past': 1 if smoking_history == ('I used to smoke' if language == 'en' else 'Əvvəl çəkmişəm') else 0
+        'hypertension': 1 if hypertension == ("Bəli" if language == 'az' else "Yes") else 0,
+        'heart_disease': 1 if heart_disease == ("Bəli" if language == 'az' else "Yes") else 0,
+        'gender_male': 1 if gender == ('Kişi' if language == 'az' else 'Male') else 0,
+        'smoking_current': 1 if smoking_history == ('Siqaret çəkirəm' if language == 'az' else 'I currently smoke') else 0,
+        'smoking_past': 1 if smoking_history == ('Əvvəl çəkmişəm' if language == 'az' else 'I used to smoke') else 0
     }
 
-    # Məlumatları oxunaqlı formada göstərmək
+    # Məlumatları göstərmək
     st.write(translate_text(language, "sidebar_header") + ":")
     st.markdown(f"""
     **{translate_text(language, 'age')}**: {age}  
     **BMI**: {bmi}  
     **{translate_text(language, 'hba1c')}**: {hba1c} mmol/mol  
     **{translate_text(language, 'blood_glucose')}**: {blood_glucose} mg/dL  
-    **{translate_text(language, 'hypertension')}**: {"Yes" if hypertension == "Yes" else "No"}  
-    **{translate_text(language, 'heart_disease')}**: {"Yes" if heart_disease == "Yes" else "No"}  
-    **{translate_text(language, 'gender')}**: {"Male" if gender == "Male" else "Female"}  
+    **{translate_text(language, 'hypertension')}**: {hypertension}  
+    **{translate_text(language, 'heart_disease')}**: {heart_disease}  
+    **{translate_text(language, 'gender')}**: {gender}  
     **{translate_text(language, 'smoking')}**: {smoking_history}
     """)
 
     # Proqnoz düyməsi
     if st.button(translate_text(language, 'prediction_button')):
-        # İstifadəçi məlumatlarını emal et
         processed_input = preprocess_user_input(user_data)
-
-        # Məlumatları miqyasla
         processed_input_scaled = scaler.transform(processed_input)
-
-        # Model ilə proqnoz et
         prediction = model.predict_proba(processed_input_scaled)
-
-        # Nəticəni göstərmək
         st.subheader(translate_text(language, 'result'))
+        risk_percentage = prediction[0][1] * 100
 
-        # Risk ehtimalını faizlə hesablayın
-        risk_percentage = prediction[0][1] * 100  # Diabet olma ehtimalını faizlə ifadə et
-
-        # Göstərilən nəticəni yaradın
+        # Risk səviyyəsini göstərmək
         if risk_percentage >= 70:
-            st.markdown(
-                f"""
-                <div style='border:2px solid #FF6347; padding: 10px; background-color:#FFE4E1;'>
-                <h3>{translate_text(language, 'high_risk')}</h3>
-                <p>{translate_text(language, 'high_risk_text')}</p>
-                <p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"<div style='border:2px solid #FF6347; padding: 10px; background-color:#FFE4E1;'><h3>{translate_text(language, 'high_risk')}</h3><p>{translate_text(language, 'high_risk_text')}</p><p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p></div>", unsafe_allow_html=True)
         elif risk_percentage >= 40:
-            st.markdown(
-                f"""
-                <div style='border:2px solid #FFA500; padding: 10px; background-color:#FFF8DC;'>
-                <h3>{translate_text(language, 'medium_risk')}</h3>
-                <p>{translate_text(language, 'medium_risk_text')}</p>
-                <p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"<div style='border:2px solid #FFA500; padding: 10px; background-color:#FFF8DC;'><h3>{translate_text(language, 'medium_risk')}</h3><p>{translate_text(language, 'medium_risk_text')}</p><p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p></div>", unsafe_allow_html=True)
         else:
-            st.markdown(
-                f"""
-                <div style='border:2px solid #32CD32; padding: 10px; background-color:#F0FFF0;'>
-                <h3>{translate_text(language, 'low_risk')}</h3>
-                <p>{translate_text(language, 'low_risk_text')}</p>
-                <p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"<div style='border:2px solid #32CD32; padding: 10px; background-color:#F0FFF0;'><h3>{translate_text(language, 'low_risk')}</h3><p>{translate_text(language, 'low_risk_text')}</p><p style='font-size: 36px;'><strong>{risk_percentage:.2f}%</strong></p></div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
